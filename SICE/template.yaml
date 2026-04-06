@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SICE - PDF Summarizer Backend
+  A cost-effective serverless backend using API Gateway, Lambda, and Amazon Bedrock (Claude 3 Haiku).
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+  Api:
+    Cors:
+      AllowMethods: "'OPTIONS,POST'"
+      AllowHeaders: "'Content-Type'"
+      AllowOrigin: "'*'"  # For production, restrict this to your frontend domain
+
+Resources:
+  SummarizerFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: backend/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+        - x86_64
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+      Events:
+        SummarizeApi:
+          Type: Api
+          Properties:
+            Path: /summarize
+            Method: post
+
+Outputs:
+  SummarizerApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage for Summarizer function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/summarize"
+  SummarizerFunctionArn:
+    Description: "Summarizer Lambda Function ARN"
+    Value: !GetAtt SummarizerFunction.Arn
